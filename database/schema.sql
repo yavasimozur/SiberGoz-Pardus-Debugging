@@ -1,23 +1,20 @@
-CREATE TABLE IF NOT EXISTS devices (
+CREATE TABLE IF NOT EXISTS system_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ip_address TEXT UNIQUE NOT NULL,
-    device_type TEXT,
-    status TEXT,
-    last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
+    zaman TEXT NOT NULL,
+    mesaj TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS security_logs (
+CREATE TABLE IF NOT EXISTS engellenen_ipler (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    event_type TEXT,
-    source_ip TEXT,
-    action_taken TEXT
+    ip_adresi TEXT UNIQUE NOT NULL,
+    engelleme_zamani TEXT NOT NULL,
+    durum TEXT DEFAULT 'BLOKE'
 );
 
-CREATE TABLE IF NOT EXISTS pcap_records (
+CREATE TABLE IF NOT EXISTS ai_teshisleri (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ip_address TEXT,
-    file_path TEXT
+    zaman TEXT NOT NULL,
+    hedef_ip TEXT NOT NULL,
+    paket_sayisi INTEGER,
+    teshis_raporu TEXT NOT NULL
 );
-
