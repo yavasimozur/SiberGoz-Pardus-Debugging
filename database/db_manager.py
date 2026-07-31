@@ -1,60 +1,102 @@
 import sqlite3
 import os
-import datetime
-from config.settings import Config
+import time
 
-class DBManager:
-    _instance = None
+# Kök dizin tespiti
+KOK_DIZIN = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_DIZINI = os.path.join(KOK_DIZIN, "database")
+DB_PATH = os.path.join(DB_DIZINI, "SiberGoz.db")
+SCHEMA_PATH = os.path.join(DB_DIZINI, "schema.sql")
 
-    def __new__(cls):
-        # Singleton Deseni: Sistemin her yerinde aynı veritabanı bağlantısı kullanılır.
-        if cls._instance is None:
-            cls._instance = super(DBManager, cls).__new__(cls)
-            cls._instance._init_db()
-        return cls._instance
+class DatabaseManager:
+    def __init__(self):
+        os.makedirs(DB_DIZINI, exist_ok=True)
+        self._tablolari_hazirla()
 
-    def _init_db(self):
-        # Eğer database klasörü yoksa fiziksel olarak oluştur
-        os.makedirs(os.path.dirname(Config.DATABASE_PATH), exist_ok=True)
-        # check_same_thread=False ile Multiprocessing (Arayüz) çökmeleri engellenir
-        self.conn = sqlite3.connect(Config.DATABASE_PATH, check_same_thread=False)
-        self.cursor = self.conn.cursor()
+    def _baglanti_al(self):
+        return sqlite3.connect(DB_PATH, timeout=10)
 
-    def setup_database(self):
-        schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+    def _tablolari_hazirla(self):
+        """Veritabanı tabloları yoksa schema.sql üzerinden otomatik oluşturur."""
         try:
-            with open(schema_path, 'r', encoding='utf-8') as f:
-                schema_script = f.read()
-            self.cursor.executescript(schema_script)
-            self.conn.commit()
+            with self._baglanti_al() as conn:
+                cursor = conn.cursor()
+                if os.path.exists(SCHEMA_PATH):
+                    with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
+                        cursor.executescript(f.read())
+                else:
+                    # Schema dosyası yoksa varsayılan tabloları gömülü kur
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS system_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        zaman TEXT NOT NULL,
+                        mesaj TEXT NOT NULL
+                    );""")
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS engellenen_ipler (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ip_adresi TEXT UNIQUE NOT NULL,
+                        engelleme_zamani TEXT NOT NULL,
+                        durum TEXT DEFAULT 'BLOKE'
+                    );""")
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS ai_teshisleri (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        zaman TEXT NOT NULL,
+                        hedef_ip TEXT NOT NULL,
+                        paket_sayisi INTEGER,
+                        teshis_raporu TEXT NOT NULL
+                    );""")
+                conn.commit()
         except Exception as e:
-            print(f"[DB KRİTİK] Şema dosyası okunamadı veya çalıştırılamadı: {e}")
-            raise e
+            print(f"[DB HATA] Tablo hazırlama hatası: {str(e)}")
 
-    def log_security_event(self, event_type: str, source_ip: str, action_taken: str) -> bool:
-        """Saldırı ve sistem olaylarını kaydeder."""
+    def log_kaydet(self, mesaj):
+        """Sistem logunu veritabanına ekler."""
+        zaman = time.strftime("%Y-%m-%d %H:%M:%S")
         try:
-            # Zamanı sistemin kendisinden alıp SQL'e zorla basıyoruz
-            anlik_zaman = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.cursor.execute(
-                "INSERT INTO security_logs (timestamp, event_type, source_ip, action_taken) VALUES (?, ?, ?, ?)",
-                (anlik_zaman, event_type, source_ip, action_taken)
-            )
-            self.conn.commit()
-            return True
+            with self._baglanti_al() as conn:
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO system_logs (zaman, mesaj) VALUES (?, ?)", (zaman, mesaj))
+                conn.commit()
         except Exception as e:
-            print(f"[DB HATA] Güvenlik logu eklenemedi: {e}")
-            return False
-        
-    def add_device(self, ip_address: str, device_type: str, status: str) -> bool:
-        """Ağa bağlanan yeni cihazları (ESP32, iPhone) kaydeder."""
+            print(f"[DB HATA] Log kaydı başarısız: {str(e)}")
+
+    def ip_engelle_kaydet(self, ip_adresi):
+        """Engellenen IP adresini kaydeder veya durumunu günceller."""
+        zaman = time.strftime("%Y-%m-%d %H:%M:%S")
         try:
-            self.cursor.execute(
-                "INSERT OR REPLACE INTO devices (ip_address, device_type, status, last_seen) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
-                (ip_address, device_type, status)
-            )
-            self.conn.commit()
-            return True
+            with self._baglanti_al() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO engellenen_ipler (ip_adresi, engelleme_zamani, durum) 
+                    VALUES (?, ?, 'BLOKE')
+                    ON CONFLICT(ip_adresi) DO UPDATE SET engelleme_zamani=?, durum='BLOKE'
+                """, (ip_adresi, zaman, zaman))
+                conn.commit()
         except Exception as e:
-            print(f"[DB HATA] Cihaz kaydedilemedi: {e}")
-            return False
+            print(f"[DB HATA] IP engelleme kaydı başarısız: {str(e)}")
+
+    def ip_engel_kaldir_kaydet(self, ip_adresi):
+        """IP adresinin engellendi durumunu pasife çeker."""
+        try:
+            with self._baglanti_al() as conn:
+                cursor = conn.cursor()
+                cursor.execute("UPDATE engellenen_ipler SET durum='SERBEST' WHERE ip_adresi=?", (ip_adresi,))
+                conn.commit()
+        except Exception as e:
+            print(f"[DB HATA] IP engel kaldırma kaydı başarısız: {str(e)}")
+
+    def ai_teshis_kaydet(self, hedef_ip, paket_sayisi, teshis_raporu):
+        """Yapay zekâ analiz raporunu veritabanına kaydeder."""
+        zaman = time.strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            with self._baglanti_al() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO ai_teshisleri (zaman, hedef_ip, paket_sayisi, teshis_raporu)
+                    VALUES (?, ?, ?, ?)
+                """, (zaman, hedef_ip, paket_sayisi, teshis_raporu))
+                conn.commit()
+        except Exception as e:
+            print(f"[DB HATA] AI teşhis kaydı başarısız: {str(e)}")
