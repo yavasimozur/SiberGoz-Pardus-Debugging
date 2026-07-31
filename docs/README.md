@@ -26,3 +26,12 @@ platformudur.
    ```bash
    git clone [https://github.com/yavasimozur/SiberGoz-Pardus-Debugging.git](https://github.com/yavasimozur/SiberGoz-Pardus-Debugging.git)
    cd SiberGoz-Pardus-Debugging
+   
+2. **Gerekli Kütüphaneleri Yükleyin:**
+   ```bash
+   sudo apt update && sudo apt install python3-tk -y
+   pip install customtkinter openpyxl
+
+3. **Yönetici Yetkisiyle Karargâh Panelini Başlatın:**
+   ```bash
+   sudo python3 gui/control_panel.py
