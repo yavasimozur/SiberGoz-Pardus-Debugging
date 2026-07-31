@@ -78,8 +78,7 @@ SiberGoz-Pardus-Debugging/
 └── tests/                          # Test ve Saldırı Simülasyonları
     ├── __init__.py
     └── test_attack_sim.py
-
-
+```
 
 🛠️ Kurulum ve Çalıştırma (Pardus OS)
 
