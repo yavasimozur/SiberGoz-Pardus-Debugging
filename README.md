@@ -115,6 +115,11 @@ Sistem çalışırken veritabanı kayıtlarını doğrudan Pardus terminalinden 
 
 🛡️ TEKNOFEST Hata Yakalama ve Geliştirme Bildirimi (PARS-BUG-2026-01)
 
-    Tespit Edilen Sorun: Pardus OS üzerindeki otonom sistemler ve izleme altyapıları, yoğun ağ saldırıları (DoS/DDoS) altında kilitlenmekte ve adli delil toplama sürecini başlatamamaktadır.
+    Tespit Edilen Sorun: Pardus OS üzerindeki otonom sistemler ve izleme 
+    altyapıları, yoğun ağ saldırıları (DoS/DDoS) altında kilitlenmekte ve adli
+    delil toplama sürecini başlatamamaktadır.
 
-    Geliştirilen Çözüm: Linux soket seviyesinde anomali takibi yapan core/network_radar.py modülü yazılmış, arayüzden bağımsız çalışan 3 terminal mimarisi, SQLite veritabanı katmanı ve yapay zekâ teşhis motoru entegre edilmiştir.
+    Geliştirilen Çözüm: Linux soket seviyesinde anomali takibi yapan 
+    core/network_radar.py modülü yazılmış, arayüzden bağımsız çalışan
+    3 terminal mimarisi, SQLite veritabanı katmanı ve yapay zekâ teşhis
+    motoru entegre edilmiştir.
