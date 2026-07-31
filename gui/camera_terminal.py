@@ -5,7 +5,7 @@ import urllib.request
 import threading
 
 # HEDEF AYARLARI
-ESP32_IP = "10.215.235.123"
+ESP32_IP = ""
 CAMERA_URL = f"http://{ESP32_IP}/capture"
 PENCERE_ADI = "SİBER GÖZ // CANLI İZLEME TERMINALİ (PARDUS)"
 
