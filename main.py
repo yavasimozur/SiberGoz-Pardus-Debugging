@@ -1,29 +1,28 @@
-import os
 import sys
-import traceback
-from core.vision_engine import VisionEngine
+import os
+import subprocess
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Proje kök dizinini Python yoluna ekle
+KOK_DIZIN = os.path.dirname(os.path.abspath(__file__))
+if KOK_DIZIN not in sys.path:
+    sys.path.insert(0, KOK_DIZIN)
 
-from database.db_manager import DBManager
-from debugging_and_security.ufw_manager import UFWManager
-from debugging_and_security.nmap_scanner import NmapScanner
-from debugging_and_security.tshark_analyzer import TsharkAnalyzer
+def baslat():
+    """SİBER GÖZ Karargâh Kontrol Panelini başlatır ve hataları görünür kılar."""
+    panel_yolu = os.path.join(KOK_DIZIN, "gui", "control_panel.py")
+    
+    # Mevcut python yorumlayıcısını (sanal ortam dahil) kullan
+    python_bin = sys.executable
 
-
-def yetki_kontrol():
-    if os.geteuid() != 0:
-        print("\n[KRİTİK HATA] Bu sistem Yönetici (Root) yetkisi gerektirir.")
-        sys.exit(1)
-
-# (Üstteki importlar ve yetki_kontrol fonksiyonu aynı kalsın)
-from gui.main_dashboard import baslat as gui_baslat
-
-def karargahi_baslat():
-    print("[BAŞARILI] Tüm motorlar devrede. Arayüz (GUI) başlatılıyor...")
-    # Siyah terminal testlerini kaldırıyoruz, doğrudan arayüzü çağırıyoruz!
-    gui_baslat()
+    print(f"[BAŞLATICI] Siber Göz başlatılıyor... (Python: {python_bin})")
+    
+    try:
+        # check=True kaldırıldı ki alt süreç çökerse traceback terminalde görülsün
+        subprocess.run([python_bin, panel_yolu])
+    except KeyboardInterrupt:
+        print("\n[BİLGİ] Kullanıcı tarafından kapatıldı.")
+    except Exception as e:
+        print(f"[HATA] Beklenmeyen başlatma hatası: {str(e)}")
 
 if __name__ == "__main__":
-    yetki_kontrol()
-    karargahi_baslat()
+    baslat()
