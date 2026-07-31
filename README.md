@@ -79,44 +79,42 @@ SiberGoz-Pardus-Debugging/
     ├── __init__.py
     └── test_attack_sim.py
 ```
-
 🛠️ Kurulum ve Çalıştırma (Pardus OS)
 
-    Açık Kaynak Depoyu Kopyalayın:
-    Bash
+1.Açık Kaynak Depoyu Kopyalayın:
+  
+    git clone [https://github.com/KULLANICI_ADIN/SiberGoz-Pardus-Debugging.git](https://github.com/KULLANICI_ADIN/SiberGoz-Pardus-Debugging.git)
+    cd SiberGoz-Pardus-Debugging
 
-git clone [https://github.com/KULLANICI_ADIN/SiberGoz-Pardus-Debugging.git](https://github.com/KULLANICI_ADIN/SiberGoz-Pardus-Debugging.git)
-cd SiberGoz-Pardus-Debugging
+2.Sanal Ortamı Oluşturun ve Bağımlılıkları Yükleyin:
 
-Sanal Ortamı Oluşturun ve Bağımlılıkları Yükleyin:
-Bash
+     python3 -m venv siber_goz_env
+    ./siber_goz_env/bin/pip install customtkinter openpyxl
 
-python3 -m venv siber_goz_env
-./siber_goz_env/bin/pip install customtkinter openpyxl
-
-Yönetici Yetkisiyle Karargâh Panelini Başlatın:
+3.Yönetici Yetkisiyle Karargâh Panelini Başlatın:
 (Raw Socket dinleme ve iptables güvenlik duvarı kuralları için sudo gereklidir)
-Bash
 
-sudo ./siber_goz_env/bin/python3 main.py
+     sudo ./siber_goz_env/bin/python3 main.py
 
-
-
-Veritabanı Sorgulama ve Denetim
+🗄️Veritabanı Sorgulama ve Denetim
 
 Sistem çalışırken veritabanı kayıtlarını doğrudan Pardus terminalinden sorgulayabilirsiniz:
 
-    Engellenen IP Kayıtlarını Listeleme:
-    Bash
+   Engellenen IP Kayıtlarını Listeleme:
+     
+     sqlite3 database/SiberGoz.db "SELECT * FROM engellenen_ipler;"
 
-sqlite3 database/SiberGoz.db "SELECT * FROM engellenen_ipler;"
+   Son Sistem Loglarını Görme:
 
-Son Sistem Loglarını Görme:
-Bash
+     sqlite3 database/SiberGoz.db "SELECT * FROM system_logs ORDER BY id DESC LIMIT 10;"
 
-sqlite3 database/SiberGoz.db "SELECT * FROM system_logs ORDER BY id DESC LIMIT 10;"
+   Yapay Zekâ Teşhis Kayıtlarını İnceleme:
 
-Yapay Zekâ Teşhis Kayıtlarını İnceleme:
-Bash
+    sqlite3 database/SiberGoz.db "SELECT * FROM ai_teshisleri;"
 
-sqlite3 database/SiberGoz.db "SELECT * FROM ai_teshisleri;"
+
+🛡️ TEKNOFEST Hata Yakalama ve Geliştirme Bildirimi (PARS-BUG-2026-01)
+
+    Tespit Edilen Sorun: Pardus OS üzerindeki otonom sistemler ve izleme altyapıları, yoğun ağ saldırıları (DoS/DDoS) altında kilitlenmekte ve adli delil toplama sürecini başlatamamaktadır.
+
+    Geliştirilen Çözüm: Linux soket seviyesinde anomali takibi yapan core/network_radar.py modülü yazılmış, arayüzden bağımsız çalışan 3 terminal mimarisi, SQLite veritabanı katmanı ve yapay zekâ teşhis motoru entegre edilmiştir.
